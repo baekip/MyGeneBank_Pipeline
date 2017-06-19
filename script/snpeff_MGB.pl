@@ -39,7 +39,7 @@ my $hostname=hostname;
 make_dir ($sh_path);
 make_dir ($output_path);
 $input_path="$input_path/$sample/";
-my $sh_file = sprintf ('%s/%s', $sh_path, "snpeff.$sample.sh");
+my $sh_file = sprintf ('%s/%s', $sh_path, "snpeff.MGB.$sample.sh");
 
 my %info;
 read_config ($config_file, \%info);
@@ -62,7 +62,7 @@ my $vcf_per_line = $info{vcf_per_line};
 ##################################################################################
 open my $fh_sh, '>', $sh_file or die;
 print $fh_sh "#!/bin/bash\n";
-print $fh_sh "#\$ -N snpeff.$sample\n";
+print $fh_sh "#\$ -N snpeff.MGB.$sample\n";
 print $fh_sh "#\$ -wd $sh_path \n";
 print $fh_sh "#\$ -pe smp $threads\n";
 #print $fh_sh "#\$ -q $queue\n";
@@ -75,7 +75,7 @@ printf $fh_sh ("\t-c %s \\\n", $snpeff_config);
 printf $fh_sh ("\t-v %s \\\n", $snpeff_db);
 printf $fh_sh ("\t-s %s/%s.snpeff.html \\\n", $output_path, $sample);
 printf $fh_sh ("\t-o vcf \\\n"); 
-printf $fh_sh ("\t %s/%s.sorted.genome.PASS.vcf \| \\\n\n", $input_path, $sample);
+printf $fh_sh ("\t %s/%s.bedtools.MGB.vcf \| \\\n\n", $input_path, $sample);
 
 printf $fh_sh ("%s -Xmx%dg -Djava.io.tmpdir=%s \\\n", $java, $threads, $tmp_dir);
 printf $fh_sh ("\t-jar %s \\\n", $snpsift);

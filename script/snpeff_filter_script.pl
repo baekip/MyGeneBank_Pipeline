@@ -29,12 +29,6 @@ my $gene_input = $info{MGB_gene_list};
 my @gene_array = read_var($gene_input);
 my $gene_list = join '|', @gene_array;
 
-my $rs_input = $info{MGB_rs_list};
-my @rs_array = read_var($rs_input);
-my $rs_list = join '|', @rs_array;
-#my %rs_hash = map{$_ => 1} @rs_array;
-#print Dumper (\%rs_hash);
-
 my $clinvar_input = $info{MGB_clinvar_list};
 my @clinvar_array = read_var($clinvar_input);
 my $clinvar_list = join '|', @clinvar_array;
@@ -42,35 +36,68 @@ my $clinvar_list = join '|', @clinvar_array;
 
 ##1. grep snpeff from gene list
 my @snpeff_vs_gene = grep (/$gene_list/, @snpeff_array);
-my @snpeff_gene_vs_rs = grep (/$rs_list/, @snpeff_vs_gene);
-my @snpeff_gene_rs_vs_clinvar = grep (/$clinvar_list/, @snpeff_gene_vs_rs);
+my @snpeff_gene_vs_clinvar = grep (/$clinvar_list/, @snpeff_vs_gene);
 
 ##2. filter from KRGB, Clinvar, Cosmic
-my $HG_out = "$output_path/HelloGene_$sample.txt";
-my $GS_out = "$output_path/GeneStyle_$sample.txt";
+my $filter_out = "$output_path/filter_$sample.txt";
+open my $fh_out, '>', $filter_out or die;
 
-open my $fh_HG, '>', $HG_out or die;
-open my $fh_GS, '>', $GS_out or die;
-
-foreach my $line (@snpeff_gene_rs_vs_clinvar){
+print $fh_out "dbSNP_ID\tGENE\tCLNDBN\tCLNSIG\n";
+foreach my $line (@snpeff_gene_vs_clinvar){
     my @line_array = split /\t/, $line;
     my $chr = $line_array[0];
     my $rs_id = $line_array[2];
     my $ref = $line_array[3];
     my $alt = $line_array[4];
+    my $gene = $line_array[12];
+    my $clnsig = $line_array[30];
+    my $clndbn = $line_array[31];
     my $COSMIC = $line_array[27];
     my $KRG_AF = $line_array[51];
 #    print $chr."\n";
 #    print $line."\n";
 #    print $KRG_AF."\n";
 #    print $COSMIC."\n";
+    my @clndbn_array;
+    my @clnsig_array;
+    my %cln_hash;
     if ($KRG_AF eq "." && $COSMIC eq ".") {
-    print $fh_HG "$rs_id,$alt\n";
-    print $fh_GS "$rs_id,$alt\n";
+        if ($clndbn =~ /,/ or $clndbn =~ /|/){
+            @clndbn_array = split /[,|]+/, $clndbn;
+        }else{
+            push @clndbn_array, $clndbn;
+        }if ($clnsig =~ /,/ or $clnsig =~ /|/){
+            @clnsig_array = split /[,|]+/, $clnsig;
+        }else{
+            push @clnsig_array, $clnsig;
+        }
     }
+    if (scalar @clndbn_array == scalar @clnsig_array){
+        for (my $i=0; $i<@clndbn_array; $i++){
+            if ($clndbn_array[$i] =~ /Hereditary_cancer/ || $clndbn_array[$i] =~ /Familial/){
+                my $cri = $clnsig_array[$i];
+                my $critical;
+                if ($cri eq "0" || $cri eq "1" || $cri eq "255"){
+                    $critical = "L";
+                }elsif ($cri eq "2"){
+                    $critical  = "M"
+                }elsif ($cri eq "3" || $cri eq "4" || $cri eq "6" || $cri eq "7"){
+                    $critical = "H"
+                }else {
+                    die "ERROR! Check!! CLNSIG Number:$cri";
+                }
+                print $fh_out "$rs_id\t$gene\t$clndbn_array[$i]\t$critical\n";
+#                print "$rs_id\t$gene\t$clndbn_array[$i]\t$criteria\n";
+            }
+#            $cln_hash{$i}->{cln_sig}=$clnsig_array[$i];
+#            $cln_hash{$i}->{cln_dbn}=$clndbn_array[$i];
+#            $cln_hash{$i}->{rs_id}=$rs_id;
+        }
+    }else{
+        die "check your hash";
+    }
+#    print $fh_out "$rs_id\t$gene\t$clndbn$clnsig\n";
 }
-close $fh_HG;
-close $fh_GS;
 #foreach my $line (@snpeff_gene_vs_rs) {
 #    my @line_array = split /\t/, $line;
 #    my $rs_id = $line_array[2];

@@ -37,18 +37,18 @@ make_dir ($output_path);
 
 #######################Requirement########################
 my %info;
-my $sh_file = sprintf ('%s/%s', $sh_path, "snpeff_filter.$sample.sh");
+my $sh_file = sprintf ('%s/%s', $sh_path, "filter_HG.$sample.sh");
 read_config ($config_file, \%info);
 
 my $project_path = $info{project_path};
 my $dev_path = $info{dev_path};
 my $script_path = "$dev_path/script";
-my $script_pl = "$script_path/snpeff_filter_script.pl";
+my $script_pl = "$script_path/filter_HG_script.pl";
 
 #######
 open my $fh_sh, '>', $sh_file or die;
 print $fh_sh "#!/bin/bash\n";
-print $fh_sh "#\$ -N snpeff_filter.$sample\n";
+print $fh_sh "#\$ -N filter_HG.$sample\n";
 print $fh_sh "#\$ -wd $sh_path \n";
 print $fh_sh "#\$ -pe smp $threads\n";
 #print $fh_sh "#\$ -q $queue\n";
